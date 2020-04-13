@@ -1,5 +1,5 @@
 import sys
-
+import os
 class Node:
     def __init__(self, code, weight):
         self.code = code
@@ -89,12 +89,17 @@ class Coder:
     def encode(self, content):
         tree = Tree()
         encoded = ""
+        longest = ""
         for char in content:
             code, seen = tree.addChar(char)
+            if len(code) > len(longest):
+                longest = code
             if seen:
                 encoded += code
             else:
                 encoded += code + self.fixedCodes[char]
+        tree.inOrder(tree.root, 0)
+        print("longest:", longest, len(longest))
         return encoded
 
     def decode(self, content):
@@ -136,7 +141,8 @@ if arg == "--encode":
     infile = open(filename, mode='rb')
     fileContent = infile.read()
     encoded = coder.encode(fileContent)
-    print(encoded)
+    # print(encoded, len(encoded))
+    print(f'size of file: {os.path.getsize(filename)} b')
     b = bytes(int(encoded[i : i + 8], 2) for i in range(0, len(encoded), 8))
 
     outfile = open(outfilename, mode='wb')
@@ -146,6 +152,8 @@ elif arg == "--decode":
     fileContent = outfile.read()
     hexstring = fileContent.hex()
     binstring = ''.join(["{0:08b}".format(int(hexstring[x:x + 2], base=16)) for x in range(0, len(hexstring), 2)])
+    print(len(binstring))
+    print(f'size of compressed file: {os.path.getsize(filename)} b')
     decoded = coder.decode(binstring)
     print(decoded)
     outfile = open(outfilename, mode='w')
