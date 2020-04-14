@@ -12,10 +12,10 @@ def log(num):
 
 def entropy(frequencies, fileContent):
     l = len(fileContent)
-    return sum([ frequencies[c] * (-(log(frequencies[c]) - log(l))) for c in range(256)]) / l
+    return sum([ frequencies[c] * (log(l) - log(frequencies[c])) for c in frequencies]) / l
 
 def conditionalEntropy(frequencies, condFreq, fileContent):
-    sumElements = [ condFreq[(y, x)] * (-(log(condFreq[(y, x)]) - log(frequencies[x]))) for y in range(256) for x in range(256) ]
+    sumElements = [ condFreq[(y, x)] * (-(log(condFreq[(y, x)]) - log(frequencies[x]))) for y in frequencies for x in frequencies ]
     return sum(sumElements) / len(fileContent)
 
 filename = sys.argv[1]
