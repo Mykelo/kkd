@@ -2,25 +2,21 @@ import sys
 import os
 import math
 import collections
+import time
 
 class Node:
-    def __init__(self, code, weight, value):
+    def __init__(self, code, weight):
         self.code = code
         self.left = None
         self.right = None
         self.parent = None
         self.weight = weight
-        self.value = value
-    
-    def isLeaf(self):
-        return not self.left and not self.right
 
 class Tree:
     def __init__(self):
-        self.seen = { 'NYT': Node('NYT', 0, 256) }
+        self.seen = { 'NYT': Node('NYT', 0) }
         self.root = self.seen['NYT']
         self.nodes = []
-        self.indexes = {}
         self.currPos = self.root
         self.currValue = 256
 
@@ -44,16 +40,12 @@ class Tree:
         return code[::-1]
 
     def findLargest(self, node):
-        # print([f'[{n.code}, {n.weight}, {n.value}] ' for n in self.nodes])
-        return next(n for n in reversed(self.nodes) if n.weight == node.weight and node.parent is not n)
+        return next(n for n in self.nodes if n.weight == node.weight)
 
     def swap(self, n1, n2):
         i1, i2 = self.nodes.index(n1), self.nodes.index(n2)
         self.nodes[i1], self.nodes[i2] = self.nodes[i2], self.nodes[i1]
-        # print(i1, i2)
-        # print('swaping:', n1.code, n1.weight, n1.value, 'with', n2.code, n2.weight, n2.value)
         n1.parent, n2.parent = n2.parent, n1.parent
-        n1.value, n2.value = n2.value, n1.value
 
         if n1.parent.left is n2:
             n1.parent.left = n1
@@ -65,45 +57,24 @@ class Tree:
         else:
             n2.parent.right = n2
 
-    def updateWeights(self, node):
-        if not node:
-            return 0
-        if node.code == '':
-            node.weight = self.updateWeights(node.left) + self.updateWeights(node.right)
-        return node.weight
-
     def updateTree(self, node):
         n = node
-        # while n != None:
-        #     n.weight += 1
-        #     if n.parent != None and n.parent.right != n and n.parent.right.weight < n.weight:
-        #         n.parent.right, n.parent.left = n.parent.left, n.parent.right
-        #     n = n.parent
         while n:
             largest = self.findLargest(n)
 
-            # self.inOrder(self.root)
-            # print('checking:', n.code, n.weight, n.value, 'with', largest.code, largest.weight, largest.value)
             if (n is not largest and node is not largest.parent and
                 largest is not n.parent):
                 self.swap(n, largest)
-
-            # if n.code != '':
-                # print('adding weight')
             n.weight += 1
             n = n.parent
-        # self.updateWeights(self.root)
 
     def addChar(self, char):
         if char not in self.seen:
             nyt = self.seen['NYT']
             nytCode = self.getCode(nyt)
-            parentNode = Node('', 1, nyt.value)
-            self.currValue -= 1
-            codeNode = Node(char, 1, self.currValue)
-            self.nodes = [codeNode, parentNode] + self.nodes
-            self.currValue -= 1
-            nyt.value = self.currValue
+            parentNode = Node('', 1)
+            codeNode = Node(char, 1)
+            self.nodes += [parentNode, codeNode]
             parentNode.parent = nyt.parent
             parentNode.left = nyt
             parentNode.right = codeNode
@@ -166,18 +137,16 @@ class Coder:
         content = content[8:]
 
         i = 0
-        while content != '':
-            char = content[0]
-            content = content[1:]
-            code = tree.goNext(char)
-            print(i)
+        while i < len(content):
+            char = content[i]
             i += 1
+            code = tree.goNext(char)
             if code == 'NYT':
-                nextEBits = content[0:self.e]
+                nextEBits = content[i:i + self.e]
                 decodedChar = self.invertedCodes[nextEBits]
                 decoded.append(decodedChar)
                 tree.addChar(decodedChar)
-                content = content[self.e:]
+                i += self.e
                 tree.resetPath()
             elif code != '':
                 decoded.append(code)
@@ -209,6 +178,7 @@ arg = sys.argv[1]
 filename = sys.argv[2]
 outfilename = sys.argv[3]
 
+t = time.time()
 if arg == "--encode":
     infile = open(filename, mode='rb')
     fileContent = infile.read()
@@ -232,6 +202,7 @@ elif arg == "--decode":
     print(len(binstring))
     print(f'size of compressed file: {os.path.getsize(filename)} b')
     decoded = coder.decode(binstring)
-    print(decoded)
-    outfile = open(outfilename, mode='w')
-    outfile.write(decoded)
+    outfile = open(outfilename, mode='wb')
+    outfile.write(bytes(decoded, 'UTF-8'))
+
+print(time.time() - t)
