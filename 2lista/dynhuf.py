@@ -109,7 +109,7 @@ class Tree:
 
 class Coder:
     def __init__(self):
-        self.fixedCodes = {x: "{0:08b}".format(x-1) for x in range(1, 256)}
+        self.fixedCodes = {x: "{0:08b}".format(x) for x in range(0, 256)}
         self.invertedCodes = {v: k for k, v in self.fixedCodes.items()}
         self.e = 8
         self.r = 0
@@ -129,12 +129,12 @@ class Coder:
         decoded = []
         tree = Tree()
         # Read first e bits
-        value = content[0:8]
+        value = content[0:self.e]
         char = self.invertedCodes[value]
         decoded.append(char)
         tree.addChar(char)
         tree.resetPath()
-        content = content[8:]
+        content = content[self.e:]
 
         i = 0
         while i < len(content):
@@ -142,7 +142,7 @@ class Coder:
             i += 1
             code = tree.goNext(char)
             if code == 'NYT':
-                nextEBits = content[i:i + self.e]
+                nextEBits = content[i:i + self.e].zfill(8)
                 decodedChar = self.invertedCodes[nextEBits]
                 decoded.append(decodedChar)
                 tree.addChar(decodedChar)
@@ -153,7 +153,7 @@ class Coder:
                 tree.addChar(code)
                 tree.resetPath()
 
-        return bytes(decoded).decode('utf-8')
+        return bytes(decoded)
 
 def countStats(fileContent, encoded):
     def countFreq(content):
@@ -203,6 +203,6 @@ elif arg == "--decode":
     print(f'size of compressed file: {os.path.getsize(filename)} b')
     decoded = coder.decode(binstring)
     outfile = open(outfilename, mode='wb')
-    outfile.write(bytes(decoded, 'UTF-8'))
+    outfile.write(decoded)
 
 print(time.time() - t)
