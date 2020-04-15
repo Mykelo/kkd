@@ -26,13 +26,10 @@ def encode(content, dictSize):
                 I = str(chr(x))
     if I:
         output.append(dictionary[I])
-
-    print(len(output))
     return output
 
 def decode(content, dictSize, decoder):
     content = decoder.decode(content)
-    print(len(content))
     size = 256
     dictionary = {i: [i] for i in range(256)}
     output = []
@@ -44,7 +41,7 @@ def decode(content, dictSize, decoder):
         elif x == size:
             J = I + [I[0]]
         else:
-            raise ValueError("Wrong compression")
+            raise ValueError("Wrong compression.")
         output.append(J)
 
         if size < dictSize:
@@ -55,8 +52,7 @@ def decode(content, dictSize, decoder):
             size = 256
             dictionary = {i: [i] for i in range(256)}
             I = [x]
-    output = bytes([item for subl in output for item in subl])
-    return output.decode('utf-8')
+    return bytes([item for subl in output for item in subl])
 
 def countFreq(content):
     freq = collections.defaultdict(int)
@@ -130,10 +126,11 @@ if action == "--encode":
     fileContent = infile.read()
     encoded = encode(fileContent, size)
     s = ''.join([coder.encode(x) for x in encoded])
+    bitsToFill = 8 - ((len(s) + 3) % 8)
+    bitsToFill %= 8
+    s = '{0:03b}'.format(bitsToFill) + s
+    s = s.ljust(len(s) + bitsToFill, '0')
     b = bytes(int(s[i : i + 8], 2) for i in range(0, len(s), 8))
-    # decode(encoded, size, coder)
-    # print(encoded)
-    # print(coder.decode(s))
     
     fileLen, encodedLen, compressionRate, textEntropy, codeEntropy = countStats(fileContent, encoded, b)
     print(f'File length: {fileLen}')
@@ -146,21 +143,19 @@ if action == "--encode":
     outfile.write(b)
     outfile.close()
 
-
-    testfile = open(outfilename, mode='rb')
-    fileContent = testfile.read()
-    hexstring = fileContent.hex()
-    binstring = ''.join(["{0:08b}".format(int(hexstring[x:x + 2], base=16)) for x in range(0, len(hexstring), 2)])
-    # print(b)
-    # print(hexstring)
-    print(all(i == j for i, j in zip(encoded, coder.decode(binstring))) )
-    print(binstring == s)
-    print(len(binstring), len(s))
 elif action == "--decode":
     outfile = open(filename, mode='rb')
     fileContent = outfile.read()
     hexstring = fileContent.hex()
     binstring = ''.join(["{0:08b}".format(int(hexstring[x:x + 2], base=16)) for x in range(0, len(hexstring), 2)])
-    decoded = decode(binstring, size, coder)
+    endBits = int(binstring[0:3], 2)
+    binstring = binstring[3:]
+    if endBits > 0:
+        binstring = binstring[:-endBits]
+    try:
+        decoded = decode(binstring, size, coder)
+    except ValueError as err:
+        print(err, 'Check if the coding type and the dictionary size are the same as during the compression.')
+        sys.exit(2)
     outfile = open(outfilename, mode='wb')
-    outfile.write(bytes(decoded, 'UTF-8'))
+    outfile.write(decoded)

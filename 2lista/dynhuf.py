@@ -62,8 +62,7 @@ class Tree:
         while n:
             largest = self.findLargest(n)
 
-            if (n is not largest and node is not largest.parent and
-                largest is not n.parent):
+            if (n is not largest and node is not largest.parent and largest is not n.parent):
                 self.swap(n, largest)
             n.weight += 1
             n = n.parent
@@ -100,7 +99,7 @@ class Tree:
             return
         
         self.inOrder(node.left, level + 1)
-        print('  ' * level, '[', node.code, node.weight, node.value, ']')
+        print('    ' * level, '[', node.code, node.weight, ']')
         self.inOrder(node.right, level + 1)
 
     def resetPath(self):
@@ -123,6 +122,7 @@ class Coder:
                 encoded += code
             else:
                 encoded += code + self.fixedCodes[char]
+        tree.inOrder(tree.root)
         return encoded
 
     def decode(self, content):
@@ -166,12 +166,16 @@ def countStats(fileContent, encoded):
 
     frequencies = countFreq(fileContent)
     l = len(fileContent)
-    entropy = sum([ frequencies[c] * (log(l) - log(frequencies[c])) for c in frequencies]) / l
+    entropy = sum([frequencies[c] * (log(l) - log(frequencies[c])) for c in frequencies]) / l
     averageCodeLen = len(encoded) / l
     compressionRate = l / math.ceil(len(encoded) / 8)
 
     return entropy, averageCodeLen, compressionRate
     
+
+if len(sys.argv) != 4:
+    print("Zla liczba argumentow")
+    sys.exit(2)
 
 coder = Coder()
 arg = sys.argv[1]
@@ -187,9 +191,12 @@ if arg == "--encode":
     entropy, averageCodeLen, compressionRate = countStats(fileContent, encoded)
     print(f'entropy: {entropy}')
     print(f'average length of code: {averageCodeLen}')
-    print(f'compression rate: {compressionRate}')
+    print(f'compression ratio: {compressionRate}')
 
-    print(f'size of file: {os.path.getsize(filename)} b')
+    bitsToFill = 8 - ((len(encoded) + 3) % 8)
+    bitsToFill %= 8
+    encoded = '{0:03b}'.format(bitsToFill) + encoded
+    encoded = encoded.ljust(len(encoded) + bitsToFill, '0')
     b = bytes(int(encoded[i : i + 8], 2) for i in range(0, len(encoded), 8))
 
     outfile = open(outfilename, mode='wb')
@@ -199,8 +206,10 @@ elif arg == "--decode":
     fileContent = outfile.read()
     hexstring = fileContent.hex()
     binstring = ''.join(["{0:08b}".format(int(hexstring[x:x + 2], base=16)) for x in range(0, len(hexstring), 2)])
-    print(len(binstring))
-    print(f'size of compressed file: {os.path.getsize(filename)} b')
+    endBits = int(binstring[0:3], 2)
+    binstring = binstring[3:]
+    if endBits > 0:
+        binstring = binstring[:-endBits]
     decoded = coder.decode(binstring)
     outfile = open(outfilename, mode='wb')
     outfile.write(decoded)
