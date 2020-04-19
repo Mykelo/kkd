@@ -101,4 +101,3 @@ class FibonacciCode:
         separateCodes = [x + '1' for x in code.split('11')][0:-1]
         seq = self.fib(max([len(x) for x in separateCodes]), True)
         return [sum([seq[i] if x == '1' else 0 for i, x in enumerate(code)]) for code in separateCodes]
-

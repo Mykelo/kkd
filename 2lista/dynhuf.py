@@ -2,7 +2,6 @@ import sys
 import os
 import math
 import collections
-import time
 
 class Node:
     def __init__(self, code, weight):
@@ -122,7 +121,6 @@ class Coder:
                 encoded += code
             else:
                 encoded += code + self.fixedCodes[char]
-        tree.inOrder(tree.root)
         return encoded
 
     def decode(self, content):
@@ -182,7 +180,6 @@ arg = sys.argv[1]
 filename = sys.argv[2]
 outfilename = sys.argv[3]
 
-t = time.time()
 if arg == "--encode":
     infile = open(filename, mode='rb')
     fileContent = infile.read()
@@ -213,5 +210,3 @@ elif arg == "--decode":
     decoded = coder.decode(binstring)
     outfile = open(outfilename, mode='wb')
     outfile.write(decoded)
-
-print(time.time() - t)

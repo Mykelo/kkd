@@ -7,11 +7,11 @@ import math
 
 def encode(content, dictSize):
     size = 256
-    dictionary = {str(chr(i)): i for i in range(256)}
+    dictionary = {chr(i): i for i in range(size)}
     output = []
-    I = str(chr(content[0]))
+    I = chr(content[0])
     for x in content[1:]:
-        J = str(chr(x))
+        J = chr(x)
         if I + J in dictionary:
             I = I + J
         else:
@@ -22,14 +22,17 @@ def encode(content, dictSize):
                 I = J
             else:
                 size = 256
-                dictionary = {str(chr(i)): i for i in range(256)}
-                I = str(chr(x))
+                dictionary = {chr(i): i for i in range(size)}
+                I = chr(x)
     if I:
         output.append(dictionary[I])
-    return output
+    # Add 1 to all codes to ensure that all values are non-negative
+    return [x + 1 for x in output]
 
 def decode(content, dictSize, decoder):
     content = decoder.decode(content)
+    # Subtract 1 from every element to retrieve original values
+    content = [x - 1 for x in content]
     size = 256
     dictionary = {i: [i] for i in range(256)}
     output = []
@@ -66,14 +69,14 @@ def entropy(content, freq):
     l = len(content)
     return sum([ freq[c] * (-(log(freq[c]) - log(l))) for c in freq]) / l
 
-def countStats(file, code, codeBytes):
+def countStats(file, code):
     fileFreq = countFreq(file)
     codeFreq = countFreq(code)
-    compressionRate = len(file) / len(codeBytes)
+    compressionRate = len(file) / len(code)
     fileEntropy = entropy(file, fileFreq)
     codeEntropy = entropy(file, codeFreq)
 
-    return len(file), len(codeBytes), compressionRate, fileEntropy, codeEntropy
+    return len(file), len(code), compressionRate, fileEntropy, codeEntropy
 
 def handleArgs(argv):
     if len(argv) < 4:
@@ -126,13 +129,14 @@ if action == "--encode":
     fileContent = infile.read()
     encoded = encode(fileContent, size)
     s = ''.join([coder.encode(x) for x in encoded])
+    test = s
     bitsToFill = 8 - ((len(s) + 3) % 8)
     bitsToFill %= 8
     s = '{0:03b}'.format(bitsToFill) + s
     s = s.ljust(len(s) + bitsToFill, '0')
     b = bytes(int(s[i : i + 8], 2) for i in range(0, len(s), 8))
     
-    fileLen, encodedLen, compressionRate, textEntropy, codeEntropy = countStats(fileContent, encoded, b)
+    fileLen, encodedLen, compressionRate, textEntropy, codeEntropy = countStats(fileContent, b)
     print(f'File length: {fileLen}')
     print(f'Code length: {encodedLen}')
     print(f'Compression rate: {compressionRate}')
@@ -142,7 +146,6 @@ if action == "--encode":
     outfile = open(outfilename, mode='wb')
     outfile.write(b)
     outfile.close()
-
 elif action == "--decode":
     outfile = open(filename, mode='rb')
     fileContent = outfile.read()
