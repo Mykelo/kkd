@@ -32,15 +32,15 @@ class Pixel:
 class PixelsContainer:
     def __init__(self, imageBytes, width, height):
         pixels = []
-        for i in range(width):
+        for i in range(height):
             col = []
-            for j in range(height):
-                index = (j * width + i) * 3
-                p = Pixel(int(imageBytes[index]), int(
-                    imageBytes[index + 1]), int(imageBytes[index + 2]))
+            for j in range(width):
+                index = (i * width + j) * 3
+                p = Pixel(int(imageBytes[index + 2]), int(
+                    imageBytes[index + 1]), int(imageBytes[index]))
                 col.append(p)
             pixels.append(col)
-        self.pixels = pixels
+        self.pixels = list(reversed(pixels))
         self.width = width
         self.height = height
 
@@ -48,7 +48,7 @@ class PixelsContainer:
         x, y = pos
         if x < 0 or x >= self.width or y < 0 or y >= self.height:
             return Pixel(0, 0, 0)
-        return self.pixels[x][y]
+        return self.pixels[y][x]
 
 
 class Stats:
@@ -172,7 +172,6 @@ def countEntropies(content):
     height = int(content[15]) << 8 | (int(content[14]))
     imageBytes = content[18:-26]
     pixels = PixelsContainer(imageBytes, width, height)
-
     fileEntropy = Stats(pixels.pixels)
 
     schemes = [
