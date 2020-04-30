@@ -74,7 +74,7 @@ def countStats(file, code):
     codeFreq = countFreq(code)
     compressionRate = len(file) / len(code)
     fileEntropy = entropy(file, fileFreq)
-    codeEntropy = entropy(file, codeFreq)
+    codeEntropy = entropy(code, codeFreq)
 
     return len(file), len(code), compressionRate, fileEntropy, codeEntropy
 
