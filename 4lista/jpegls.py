@@ -10,10 +10,10 @@ class Pixel:
         self.b = blue
 
     def __sub__(self, p):
-        return Pixel((self.r - p.r) % 256, (self.g - p.g) % 256, (self.b - p.b) % 256)
+        return Pixel(self.r - p.r, self.g - p.g, self.b - p.b)
 
     def __add__(self, p):
-        return Pixel((self.r + p.r) % 256, (self.g + p.g) % 256, (self.b + p.b) % 256)
+        return Pixel(self.r + p.r, self.g + p.g, self.b + p.b)
 
     def __truediv__(self, p):
         def is_number(s):
@@ -27,6 +27,9 @@ class Pixel:
             return Pixel(self.r // p, self.g // p, self.b // p)
         else:
             return Pixel(self.r // p.r, self.g // p.g, self.b // p.b)
+
+    def __mod__(self, value):
+        return Pixel(self.r % value, self.g % value, self.b % value)
 
 
 class PixelsContainer:
@@ -161,7 +164,7 @@ def JPEG(pixels, scheme):
         for j in range(pixels.height):
             x = pixels[i, j]
             xdash = scheme(pixels, i, j)
-            col.append(x - xdash)
+            col.append((x - xdash) % 256)
         diffPixels.append(col)
 
     return diffPixels
