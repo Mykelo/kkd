@@ -144,11 +144,21 @@ def scheme8(pixels, x, y):
     n = pixels[x, y - 1]
 
     def byColor(wc, nwc, nc):
-        if nwc > max(wc, nc):
+        if nwc >= max(wc, nc):
             return max(wc, nc)
-        if nwc < min(wc, nc):
+        if nwc <= min(wc, nc):
             return min(wc, nc)
-        return (wc + nc - nwc) % 256
+        return wc + nc - nwc
+
+
+    # LOCO-I algorithm (not used in this solution)
+    def byColor2(wc, nwc, nc):
+        if nwc >= max(wc, nc):
+            return min(wc, nc)
+        if nwc <= min(wc, nc):
+            return max(wc, nc)
+        return wc + nc - nwc
+
 
     return Pixel(
         byColor(w.r, nw.r, n.r),
@@ -205,6 +215,9 @@ def countEntropies(content):
     print(f'for green ({bestForGreen[1]}): {bestForGreen[2].greenEntropy}')
     print(f'for blue ({bestForBlue[1]}): {bestForBlue[2].blueEntropy}')
 
+if len(sys.argv) < 2:
+    print('File name missing')
+    sys.exit(2)
 
 filename = sys.argv[1]
 infile = open(filename, mode='rb')
