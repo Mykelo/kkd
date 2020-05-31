@@ -190,7 +190,9 @@ def get_stats(original, modified):
     return mserror, mserror_r, mserror_g, mserror_b, snr_value
 
 
-def decode(content, k):
+def decode(content):
+    width = int(content[13]) << 8 | (int(content[12]))
+    height = int(content[15]) << 8 | (int(content[14]))
     imageBytes = content[18:-26]
     hexstring = imageBytes.hex()
 
@@ -204,11 +206,19 @@ def decode(content, k):
     coder = EliasOmegaCode()
     imageBytes = coder.decode(binstring)
 
+    # If bits are not decoded correctly, return the input
+    if len(imageBytes) != width * height * 3:
+        return content
+
     # Even numbers should be positive. Odd numbers should be negative.
     differences = [x // 2 if x % 2 == 0 else -(x // 2) for x in imageBytes]
-    pixels = differential_decoding(differences)
-
-    return content[:18] + bytes(pixels) + content[-26:]
+    pixels = [Pixel(int(differences[i + 2]), int(differences[i + 1]), int(differences[i])) for i in range(0,len(differences),3)]
+    pixels = differential_decoding(pixels)
+    pixels_array = []
+    for p in pixels:
+        pixels_array += [p.b, p.g, p.r]
+    
+    return content[:18] + bytes(pixels_array) + content[-26:]
 
 
 def encode(content, k):
@@ -232,11 +242,11 @@ def encode(content, k):
     # Flatten pixels to 1 dimension
     pixels_flat = [pixels[x, y] for y in reversed(range(pixels.height)) for x in range(pixels.width)]
 
+    low_res = differential_coding(filtered_low)
     # Go back to the list of numbers
     byte_array = []
-    for p in filtered_low:
+    for p in low_res:
         byte_array += [p.b, p.g, p.r]
-    byte_array = differential_coding(byte_array)
 
     # Prepare for Elias coding (get rid of non-positive numbers)
     byte_array = [2 * x if x > 0 else abs(x) * 2 + 1 for x in byte_array]
@@ -281,19 +291,24 @@ def append_to_file_name(filename, extra):
     return "{name}_{extra}{ext}".format(name=name, extra=extra, ext=ext)
 
 
-if len(sys.argv) < 5:
+if len(sys.argv) < 4:
     print('Wrong parameters')
-    print('python3 lbg.py [input file] [output file] number_of_colors [--encode|--decode]')
+    print('python3 quants.py [input file] [output file] [--encode k|--decode]')
     sys.exit(2)
 
 filename = sys.argv[1]
 outfilename = sys.argv[2]
-k = int(sys.argv[3])
-action = sys.argv[4]
+k = int(sys.argv[4]) if len(sys.argv) == 5 else -1
+action = sys.argv[3]
 infile = open(filename, mode='rb')
 fileContent = infile.read()
 
 if action == '--encode':
+    if k == -1:
+        print('Wrong parameters')
+        print('python3 quants.py [input file] [output file] [--encode k|--decode]')
+        sys.exit(2)
+        
     low_res, high_res = encode(fileContent, k)
     outfile = open(append_to_file_name(outfilename, 'low_encoded'), mode='wb')
     outfile.write(low_res)
@@ -303,7 +318,7 @@ if action == '--encode':
     outfile.write(high_res)
     outfile.close()
 elif action == '--decode':
-    res = decode(fileContent, k)
+    res = decode(fileContent)
     outfile = open(outfilename, mode='wb')
     outfile.write(res)
 
