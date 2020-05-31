@@ -276,12 +276,12 @@ def encode(content, k):
     print(f'Low MSE (red): {low_mse_r}')
     print(f'Low MSE (green): {low_mse_g}')
     print(f'Low MSE (blue): {low_mse_b}')
-    print(f'Low SNR: {low_snr}')
+    print(f'Low SNR: {low_snr} ({10 * math.log10(low_snr)} dB)')
     print(f'High MSE: {high_mse}')
     print(f'High MSE (red): {high_mse_r}')
     print(f'High MSE (green): {high_mse_g}')
     print(f'High MSE (blue): {high_mse_b}')
-    print(f'High SNR: {high_snr}')
+    print(f'High SNR: {high_snr} ({10 * math.log10(high_snr)} dB)')
 
     return low_res_bytes, high_res_bytes
 
