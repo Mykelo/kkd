@@ -47,10 +47,10 @@ def decode(content):
             corrected = correct(code, x)
         except:
             double_errors += 1
-            result += code
 
         corrected_arr = np.array([int(c) for c in corrected])
         decoded = np.dot(D, corrected_arr.T)
+        decoded %= 2
         result += ''.join(map(str, map(int, decoded)))
 
     return result, double_errors
