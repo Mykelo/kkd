@@ -1,7 +1,6 @@
 import sys
 import numpy as np
 
-
 G = np.array([
     [1, 1, 1, 0, 0, 0, 0, 1],
     [1, 0, 0, 1, 1, 0, 0, 1],
@@ -26,6 +25,5 @@ outfilename = sys.argv[2]
 infile = open(infilename, mode='rb')
 content = infile.read()
 encoded = encode(content)
-print(encoded)
 outfile = open(outfilename, mode='wb')
 outfile.write(bytes(int(encoded[i : i + 8], 2) for i in range(0, len(encoded), 8)))

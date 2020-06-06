@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 
-
+# Parity check matrix
 H = np.array([
     [1, 0, 1, 0, 1, 0, 1, 0],
     [0, 1, 1, 0, 0, 1, 1, 0],
@@ -9,6 +9,7 @@ H = np.array([
     [1, 1, 1, 1, 1, 1, 1, 1]
 ])
 
+# Decoding matrix
 D = np.array([
     [0, 0, 1, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 1, 0, 0, 0],
@@ -18,18 +19,23 @@ D = np.array([
 
 
 def correct(code, syndrome):
-    code_array = [c for c in code]
     hamming_syndrome = syndrome[:3]
     parity = syndrome[3]
+
+    # No errors
     if parity == 0 and sum(hamming_syndrome) == 0:
         return code
+
+    # Error at the end   
     if parity == 1 and sum(hamming_syndrome) == 0:
-        code_array[-1] = '1' if code_array[-1] == '0' else '0'
-        return ''.join(code_array)
+        code[-1] = (code[-1] + 1) % 2
+        return code
+
+    # One error
     if parity == 1:
-        position = sum(hamming_syndrome * [1, 2, 4])
-        code_array[position-1] = '1' if code_array[position-1] == '0' else '0'
-        return ''.join(code_array)
+        position = sum(hamming_syndrome * [1, 2, 4]) - 1
+        code[position] = (code[position] + 1) % 2
+        return code
 
     raise ValueError('Double error')
 
@@ -42,14 +48,13 @@ def decode(content):
         a = np.array([int(c) for c in code])
         x = np.dot(H, a)
         x %= 2
-        corrected = code
+        corrected = a
         try:
-            corrected = correct(code, x)
+            corrected = correct(a, x)
         except:
             double_errors += 1
 
-        corrected_arr = np.array([int(c) for c in corrected])
-        decoded = np.dot(D, corrected_arr.T)
+        decoded = np.dot(D, corrected.T)
         decoded %= 2
         result += ''.join(map(str, map(int, decoded)))
 
@@ -60,6 +65,6 @@ outfilename = sys.argv[2]
 
 infile = open(infilename, mode='rb')
 decoded, double_errors = decode(infile.read())
-print(f'Double errors: {double_errors}')
+print(f'Podwojne bledy: {double_errors}')
 outfile = open(outfilename, mode='wb')
 outfile.write(bytes(int(decoded[i : i + 8], 2) for i in range(0, len(decoded), 8)))
